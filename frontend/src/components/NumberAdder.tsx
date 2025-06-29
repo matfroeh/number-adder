@@ -1,20 +1,19 @@
 import { useState } from "react";
-import { addNumbers } from "@/api/api";
+import { addNumbers } from "@/services/api";
 import Input from "@/components/generic/Input";
 import Button from "@/components/generic/Button";
 
 const NumberAdder = () => {
   const [form, setForm] = useState({
-    firstNumber: 0,
-    secondNumber: 0,
+    firstNumber: "",
+    secondNumber: "",
   });
   const [error, setError] = useState("");
   const [result, setResult] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    console.log(`Input changed: ${name} = ${value}`);
-    console.log("Input type:", typeof value);
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -23,13 +22,16 @@ const NumberAdder = () => {
       throw new Error("Both fields are required.");
     }
 
+    const firstNum = Number(form.firstNumber);
+    const secondNum = Number(form.secondNumber);
+
     if (
-      isNaN(Number(form.firstNumber)) ||
-      isNaN(Number(form.secondNumber)) ||
-      Number(form.firstNumber) < 1 ||
-      Number(form.firstNumber) > 100 ||
-      Number(form.secondNumber) < 1 ||
-      Number(form.secondNumber) > 100
+      isNaN(firstNum) ||
+      isNaN(secondNum) ||
+      firstNum < 1 ||
+      firstNum > 100 ||
+      secondNum < 1 ||
+      secondNum > 100
     ) {
       throw new Error("Both numbers must be between 1 and 100.");
     }
@@ -39,29 +41,22 @@ const NumberAdder = () => {
     e.preventDefault();
     setError("");
     setResult(null);
-    const firstNumber = Number(form.firstNumber);
-    const secondNumber = Number(form.secondNumber);
 
+    setIsLoading(true);
     try {
       verifyInput();
+      const firstNumber = Number(form.firstNumber);
+      const secondNumber = Number(form.secondNumber);
+      const result = await addNumbers(firstNumber, secondNumber);
+      setResult(result);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
         setError("An unknown error occurred.");
       }
-      setResult(null);
-      return;
     }
-
-    try {
-      const result = await addNumbers(firstNumber, secondNumber);
-      setResult(result);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(`API Error: ${err.message}`);
-      }
-    }
+    setIsLoading(false);
   };
 
   return (
@@ -92,7 +87,10 @@ const NumberAdder = () => {
             required: true,
           }}
         />
-        <Button text="Add Numbers" />
+        <Button
+          text={isLoading ? "Adding Numbers..." : "Add Numbers"}
+          disabled={isLoading}
+        />
       </form>
       <p className="text-gray-200 text-center">
         Result: <span className="text-green-500">{result}</span>

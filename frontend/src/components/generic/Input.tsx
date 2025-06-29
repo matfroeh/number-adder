@@ -1,6 +1,6 @@
 type InputProps = {
   label: string;
-  value: number;
+  value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   config?: React.InputHTMLAttributes<HTMLInputElement>;
 };

@@ -31,7 +31,9 @@ export const addNumbers = async (
   const data = await response.json();
 
   if (data.error) {
-    throw new Error(`Error Code ${data.error.code}: ${data.error.message}`);
+    throw new Error(
+      `API Error: Error Code ${data.error.code}: ${data.error.message}`
+    );
   }
 
   return data.result;
