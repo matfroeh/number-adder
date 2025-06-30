@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { addNumbers } from "@/services/api";
-import Input from "@/components/generic/Input";
-import Button from "@/components/generic/Button";
+import NumberAdderForm from "@/components/NumberAdderForm";
+import ResultBar from "@/components/ResultBar";
+import ErrorBar from "@/components/ErrorBar";
+import { verifyNumberAdderInput } from "@/lib/inputVerification";
 
 const NumberAdder = () => {
   const [form, setForm] = useState({
@@ -11,30 +13,12 @@ const NumberAdder = () => {
   const [error, setError] = useState("");
   const [result, setResult] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [disableInputVerification, setDisableInputVerification] =
+    useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const verifyInput = () => {
-    if (!form.firstNumber || !form.secondNumber) {
-      throw new Error("Both fields are required.");
-    }
-
-    const firstNum = Number(form.firstNumber);
-    const secondNum = Number(form.secondNumber);
-
-    if (
-      isNaN(firstNum) ||
-      isNaN(secondNum) ||
-      firstNum < 1 ||
-      firstNum > 100 ||
-      secondNum < 1 ||
-      secondNum > 100
-    ) {
-      throw new Error("Both numbers must be between 1 and 100.");
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +28,13 @@ const NumberAdder = () => {
 
     setIsLoading(true);
     try {
-      verifyInput();
+      // For demonstration purposes only, frontend input verification can be disabled through a checkbox.
+      if (!disableInputVerification) {
+        verifyNumberAdderInput({
+          firstNumber: form.firstNumber,
+          secondNumber: form.secondNumber,
+        });
+      }
       const firstNumber = Number(form.firstNumber);
       const secondNumber = Number(form.secondNumber);
       const result = await addNumbers(firstNumber, secondNumber);
@@ -61,41 +51,28 @@ const NumberAdder = () => {
 
   return (
     <div className="max-w-md w-full mx-auto p-6 bg-black space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <h1 className="text-3xl text-center text-gray-200">Add Two Numbers</h1>
-        <Input
-          label="First Number (1-100)"
-          value={form.firstNumber}
-          onChange={handleInputChange}
-          config={{
-            type: "number",
-            name: "firstNumber",
-            min: 1,
-            max: 100,
-            required: true,
-          }}
+      <NumberAdderForm
+        form={form}
+        handleSubmit={handleSubmit}
+        handleInputChange={handleInputChange}
+        isLoading={isLoading}
+      />
+      <ResultBar result={result} />
+      <ErrorBar error={error} />
+
+      {/* Checkbox for disabling frontend input verification for demo purposes */}
+      <div className="flex items-center justify-end mt-8">
+        <input
+          type="checkbox"
+          className="ml-2 mt-0.5"
+          checked={disableInputVerification}
+          onChange={(e) => setDisableInputVerification(e.target.checked)}
+          aria-label="Disable Input Verification"
         />
-        <Input
-          label="Second Number (1-100)"
-          value={form.secondNumber}
-          onChange={handleInputChange}
-          config={{
-            type: "number",
-            name: "secondNumber",
-            min: 1,
-            max: 100,
-            required: true,
-          }}
-        />
-        <Button
-          text={isLoading ? "Adding Numbers..." : "Add Numbers"}
-          disabled={isLoading}
-        />
-      </form>
-      <p className="text-gray-200 text-center">
-        Result: <span className="text-green-500">{result}</span>
-      </p>
-      <p className="text-red-500 text-center mt-4">{error}</p>
+        <label className="text-gray-200 text-xs ml-2">
+          Disable (Frontend) Input Verification
+        </label>
+      </div>
     </div>
   );
 };
